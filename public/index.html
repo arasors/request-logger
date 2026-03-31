@@ -293,6 +293,59 @@
       opacity: 1;
     }
 
+    .path-url-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-top: 6px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      cursor: text;
+      transition: border-color 0.2s;
+    }
+
+    .path-url-row:hover {
+      border-color: var(--border-active);
+    }
+
+    .path-url-text {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 5px 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: all;
+      min-width: 0;
+    }
+
+    .path-url-copy {
+      flex-shrink: 0;
+      background: var(--bg-tertiary);
+      border: none;
+      border-left: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 5px 8px;
+      font-size: 12px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+    }
+
+    .path-url-copy:hover {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .path-url-copy.copied {
+      color: var(--green);
+    }
+
     /* Main Content */
     .main {
       display: flex;
@@ -891,14 +944,34 @@
     }
 
     // Render paths
+    function getFullUrl(pathName) {
+      return `${location.protocol}//${location.host}${pathName}`;
+    }
+
+    function copyUrl(e, pathName) {
+      e.stopPropagation();
+      const btn = e.currentTarget;
+      navigator.clipboard.writeText(getFullUrl(pathName)).then(() => {
+        btn.classList.add("copied");
+        btn.innerHTML = "&#x2713;";
+        showToast("URL copied to clipboard");
+        setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = "&#x2398;"; }, 1500);
+      });
+    }
+
     function renderPaths() {
       const items = paths.map(p => {
         const isActive = activePath === p.id;
+        const fullUrl = getFullUrl(p.path);
         return `
           <div class="path-item ${isActive ? "active" : ""}" data-id="${p.id}" onclick="selectPath('${p.id}')">
             <div class="path-item-info">
               <div class="path-item-name">${escapeHtml(p.path)}</div>
               <div class="path-item-meta">${timeAgo(p.createdAt)}</div>
+              <div class="path-url-row" onclick="event.stopPropagation()">
+                <span class="path-url-text" title="${escapeHtml(fullUrl)}">${escapeHtml(fullUrl)}</span>
+                <button class="path-url-copy" onclick="copyUrl(event, '${escapeHtml(p.path)}')" title="Copy URL">&#x2398;</button>
+              </div>
             </div>
             <span class="path-item-count">${p.requestCount || 0}</span>
             <button class="path-delete" onclick="event.stopPropagation();deletePath('${p.id}')" title="Remove path">&#x2715;</button>
